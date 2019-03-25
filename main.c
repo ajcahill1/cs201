@@ -1,14 +1,68 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#define BUFFER_SIZE 1024
 
-FILE *currentFile;
+/*
+Creates an object for the movie files
+*/
+struct movie {
+  char* title;
+  char* genre;
+  char* runtime;
+  char* yearReleased;
+  char* dateAcquired;//TODO maybe make month/day/year?
+  int mediaType;
+};
+
+
+/*
+char getMediaType(int i){
+  if (int i == 1) return ""
+}
+*/
+
 int firstTime = 1;
+FILE *currentFile;
 
 /*
 This function creates a BST of all IMDB data
 */
 void load(){
-  //write the shit to be loaded in
+  FILE* database = fopen("title.basics.tsv", "r");
+  char buffer[BUFFER_SIZE];
+  //char delimiter = "\t";
+  char* token;
+
+  printf("Now loading...\n\n");
+
+  while( fgets(buffer, BUFFER_SIZE, database) != NULL ){
+    struct movie currentMovie;
+    token = strtok(buffer, "\t");
+    token = strtok(NULL, "\t");
+    token = strtok(NULL, "\t");
+    currentMovie.title = token;
+    //printf("%s\n", currentMovie.title);
+    token = strtok(NULL, "\t");
+    token = strtok(NULL, "\t");
+    token = strtok(NULL, "\t");
+    currentMovie.yearReleased = token;
+    //printf("%s\n", token);
+    token = strtok(NULL, "\t");
+    token = strtok(NULL, "\t");
+    currentMovie.runtime = token;
+    //printf("%s\n", token);
+    token = strtok(NULL, "\t");
+    currentMovie.genre = token;
+    //printf("%s\n", token);
+      /*
+      while(token != NULL){
+        printf("%s\n", token);
+        token = strtok(NULL, "\t");
+        }
+        */
+  }
+  return;
 }
 
 /*
@@ -74,7 +128,7 @@ void menu() {
     printf("Please insert a number (1-6): ");
     scanf("%d", &choice);
     printf("\n");
-    
+
     if (choice == 1){
       //createCatalog();
     }
