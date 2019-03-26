@@ -3,6 +3,10 @@
 #include <stdlib.h>
 #define BUFFER_SIZE 1024
 
+int firstTime = 1;
+FILE *currentFile;
+
+
 /*
 Creates an object for the movie files
 */
@@ -15,55 +19,165 @@ struct movie {
   int mediaType;
 };
 
+struct node {
+  struct movie* movie;
+  struct node* left;
+  struct node* right;
+  int ht;
+};
 
-/*
-char getMediaType(int i){
-  if (int i == 1) return ""
+////////////////////////////////////////////////////////////////////////////////
+struct movie* holder;
+
+struct node* newNode (struct node* n, struct movie* m) {
+  struct node* node = (struct node*) malloc(sizeof(struct node));
+
+  holder = (struct movie*) malloc(sizeof(struct movie));
+
+  holder->title = malloc(strlen((m->title)+1));
+  holder->genre = malloc(strlen((m->genre)+1));
+  holder->runtime = malloc(strlen((m->runtime)+1));
+  holder->yearReleased = malloc(strlen((m->yearReleased)+1));
+  strcpy(holder->title, m->title);
+  strcpy(holder->genre, m->genre);
+  strcpy(holder->runtime, m->runtime);
+  strcpy(holder->yearReleased, m->yearReleased);
+
+  node->movie = holder;
+  node->left = NULL;
+  node->right = NULL;
+  node->ht = 1;
+
+  return (node);
 }
-*/
 
-int firstTime = 1;
-FILE *currentFile;
+int height(struct node* T) {
+  int lh,rh;
+	if(T==NULL)
+		return(0);
 
-/*
-This function creates a BST of all IMDB data
-*/
-void load(){
-  FILE* database = fopen("title.basics.tsv", "r");
-  char buffer[BUFFER_SIZE];
-  //char delimiter = "\t";
-  char* token;
+	if(T->left==NULL)
+		lh=0;
+	else
+		lh=1+T->left->ht;
 
-  printf("Now loading...\n\n");
+	if(T->right==NULL)
+		rh=0;
+	else
+		rh=1+T->right->ht;
 
-  while( fgets(buffer, BUFFER_SIZE, database) != NULL ){
-    struct movie currentMovie;
-    token = strtok(buffer, "\t");
-    token = strtok(NULL, "\t");
-    token = strtok(NULL, "\t");
-    currentMovie.title = token;
-    //printf("%s\n", currentMovie.title);
-    token = strtok(NULL, "\t");
-    token = strtok(NULL, "\t");
-    token = strtok(NULL, "\t");
-    currentMovie.yearReleased = token;
-    //printf("%s\n", token);
-    token = strtok(NULL, "\t");
-    token = strtok(NULL, "\t");
-    currentMovie.runtime = token;
-    //printf("%s\n", token);
-    token = strtok(NULL, "\t");
-    currentMovie.genre = token;
-    //printf("%s\n", token);
-      /*
-      while(token != NULL){
-        printf("%s\n", token);
-        token = strtok(NULL, "\t");
-        }
-        */
+	if(lh>rh)
+		return(lh);
+
+	return(rh);
+}
+struct node* rotateright(struct node* x) {
+	struct node* y;
+	y=x->left;
+	x->left=y->right;
+	y->right=x;
+	x->ht=height(x);
+	y->ht=height(y);
+	return(y);
+}
+
+struct node* rotateleft(struct node* x) {
+	struct node* y;
+	y=x->right;
+	x->right=y->left;
+	y->left=x;
+	x->ht=height(x);
+	y->ht=height(y);
+
+	return(y);
+}
+
+struct node* RR(struct node* T) {
+	T=rotateleft(T);
+	return(T);
+}
+
+struct node* LL(struct node* T) {
+	T=rotateright(T);
+	return(T);
+}
+
+struct node* LR(struct node* T) {
+	T->left=rotateleft(T->left);
+	T=rotateright(T);
+
+	return(T);
+}
+
+struct node* RL(struct node* T) {
+	T->right=rotateright(T->right);
+	T=rotateleft(T);
+	return(T);
+}
+
+int BF(struct node* T) {
+	int lh,rh;
+	if(T==NULL)
+		return(0);
+
+	if(T->left==NULL)
+		lh=0;
+	else
+		lh=1+T->left->ht;
+
+	if(T->right==NULL)
+		rh=0;
+	else
+		rh=1+T->right->ht;
+
+	return(lh-rh);
+}
+
+void preorder(struct node* T) {
+	if(T!=NULL) {
+		printf("%s(Bf=%d)",T->movie->title,BF(T));
+		preorder(T->left);
+		preorder(T->right);
+	}
+}
+
+struct node* insert(struct node* T, struct movie *m) {
+  if (T!=NULL){
+    printf("now inserting %s\ncomparing to %s\n", m->title, T->movie->title);
+    printf("%d\n", strcmp(m->title, T->movie->title));
   }
-  return;
+
+	if(T==NULL) {
+    printf("creating new node with %s\n", m->title);
+		return(newNode(T,m));
+	}
+	else if(strcmp(m->title, T->movie->title) > 0) {	// insert in right subtree
+    printf("trying to insert into right tree\n");
+    T->right=insert(T->right,m);
+		if(BF(T)==-2){
+			if(strcmp(m->title, T->right->movie->title) > 0)
+				T=RR(T);
+		  else{
+				T=RL(T);
+      }
+    }
+	}
+	else if(strcmp(m->title, T->movie->title) < 0) {
+		T->left=insert(T->left,m);
+		if(BF(T)==2){
+			if(strcmp(m->title, T->left->movie->title) < 0)
+				T=LL(T);
+			else{
+				T=LR(T);
+      }
+    }
+	}
+
+	T->ht=height(T);
+  printf("%s\n\n", T->movie->title);
+	return(T);
 }
+////////////////////////////////////////////////////////////////////////////////
 
 /*
 Checks if a file exists
@@ -75,6 +189,58 @@ int exists(const char *fname) {
     return 1;
   }
   return 0;
+}
+
+/*
+This function creates a BST of all IMDB data
+*/
+void load(){
+  FILE* database = fopen("title.basics.tsv", "r");
+  char buffer[BUFFER_SIZE];
+  //char delimiter = "\t";
+  char* token;
+  struct node* root = NULL;
+  struct movie* currentMovie;
+  printf("Now loading...\n\n");
+  int counter = 0;
+
+  while( fgets(buffer, BUFFER_SIZE, database) != NULL ) {
+    currentMovie = (struct movie*) malloc(sizeof(struct movie));
+
+    //if (root != NULL)
+      //printf("before declaration root = %s\n", root->movie.title);
+    token = strtok(buffer, "\t");
+    token = strtok(NULL, "\t");
+    if (strcmp(token,"movie") != 0 && strcmp(token,"tvMovie") != 0) continue;
+
+    token = strtok(NULL, "\t");
+    currentMovie->title = token;
+    //printf("%s\n", token);
+
+    token = strtok(NULL, "\t");
+    token = strtok(NULL, "\t");
+    token = strtok(NULL, "\t");
+    currentMovie->yearReleased = token;
+    //printf("%s\n", token);
+
+    token = strtok(NULL, "\t");
+    token = strtok(NULL, "\t");
+    currentMovie->runtime = token;
+    //printf("%s\n", token);
+
+    token = strtok(NULL, "\t");
+    currentMovie->genre = token;
+    //printf("%s\n\n", token);
+
+    if (root != NULL)
+      printf("before insert root = %s, current movie = %s\n", root->movie->title, currentMovie->title);
+    root = insert(root, currentMovie);
+    printf("after insert root = %s, current movie = %s\n\n", root->movie->title, currentMovie->title);
+    counter++;
+    if (counter == 10) break;
+  }
+  preorder(root);
+  return;
 }
 
 /*
@@ -142,6 +308,7 @@ void menu() {
       //deleteCatalog();
     }
     else if (choice == 5){
+      fclose(currentFile);
       intro();
       menu();
       return;
